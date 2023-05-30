@@ -321,6 +321,7 @@ int getMove(Board_t *self, unsigned int *x, unsigned int *y) {
 		return -1;
 	}
 	return 0;
+	//TODO evitar que pete cuendo meto letras
 }
 
 
