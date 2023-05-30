@@ -314,50 +314,39 @@ int getMove(Board_t *self, unsigned int *x, unsigned int *y) {
 
 	//Reads values from keyboard and returns them in x and y.
 
-	printf("Select a cell [row].[column]: ");
-	fflush(0);
-	scanf("%d.%d", x, y);
-	if (*x >= self->dim1 || *y >= self->dim2) {
+	int inputsMatched = 0;
+
+	if (!errorsInBoard(self)) {
+		do {
+			printf("Select a cell [row].[column]: ");
+			fflush(0);
+			inputsMatched = scanf("%u.%u", x, y);
+		}
+		while (inputsMatched != 2 || *x >= self->dim1 || *y >= self->dim2);
+		return 0;
+	}
+	else {
 		return -1;
 	}
-	return 0;
-	//TODO evitar que pete cuendo meto letras
+
 }
 
 
 int main() {
 
 	Board_t *self;
-	unsigned int i, j;
-	int res;
+	unsigned int i = 0, j = 0;
 
-	self = Board_c1(10, 10, 1, 2000);
+
+	self = Board_c1(10, 10, 15, 2000);
+	if (errorsInBoard(self)) {
+		return -1;
+	}
 	setBoard(self);
-//	do {
-//		printBoardVisible(self);
-//
-//		do {
-//			printf("Select a cell [row].[column]: ");
-//			fflush(0);
-//			scanf("%d.%d", &i, &j);
-//		}
-//		while (i > self->dim1 - 1 || j > self->dim2 - 1);
-//
-//		if (checkMine(self, i, j) == 1) {
-//			printf("********GAME OVER!********\n");
-//			break;
-//		}
-//
-//		discoverSurroundingCells(self, i, j);
-//	}
-//	while (!youWon(self));
 
 	do {
 		printBoardVisible(self);
-		res = getMove(self, &i, &j);
-		while (res == -1) {
-			res = getMove(self, &i, &j);
-		}
+		getMove(self, &i, &j);
 		discoverSurroundingCells(self, i, j);
 	}
 	while (!youWon(self) && checkMine(self, i, j) == 0);
