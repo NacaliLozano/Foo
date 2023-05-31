@@ -8,6 +8,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 
 typedef struct {
 	char value, visible;
@@ -331,32 +336,102 @@ int getMove(Board_t *self, unsigned int *x, unsigned int *y) {
 
 }
 
+int writeBoard(Board_t *self) {
+
+	//Writes the board in the path board.txt
+
+	int fd;
+
+	if (errorsInBoard(self)) {
+		return -2;
+	}
+
+	fd = open("board.txt", O_WRONLY | O_CREAT | S_IWUSR);
+	if (fd == -1) {
+		printf("Error opening file.\n");
+		return -1;
+	}
+	write(fd, &self->dim1, sizeof(unsigned int));
+	write(fd, &self->dim2, sizeof(unsigned int));
+	write(fd, &self->mines, sizeof(unsigned int));
+	write(fd, self->mat, self->dim1 * self->dim2 * sizeof(Cell_t));
+
+	if (close(fd) == -1) {
+		printf("Error closing file.\n");
+		return -3;
+	}
+	return 0;
+
+}
+
+int readBoard(Board_t *self) {
+
+	//Reads the file board.txt and returns a pointer to the board.
+
+	int fd;
+
+	fd = open("board.txt", O_RDONLY);
+	if (fd == -1) {
+		printf("Error opening file.\n");
+		return -1;
+	}
+
+	read(fd, &self->dim1, sizeof(unsigned int));
+	read(fd, &self->dim2, sizeof(unsigned int));
+	read(fd, &self->mines, sizeof(unsigned int));
+	read(fd, self->mat, self->dim1 * self->dim2 * sizeof(Cell_t));
+
+	if (close(fd) == -1) {
+		printf("Error closing file.\n");
+		return -2;
+	}
+	return 0;
+}
+
 
 int main() {
 
-	Board_t *self;
+	Board_t *self = NULL;
 	unsigned int i = 0, j = 0;
+	char answer = '\0';
 
-
-	self = Board_c1(10, 10, 15, 2000);
-	if (errorsInBoard(self)) {
-		return -1;
+	do {
+		printf("Would you like to load the existing game (y) or start a new game (n)? ");
+		fflush(0);
 	}
-	setBoard(self);
+	while (scanf("%c", &answer) != 1 || !(answer == 'y' || answer == 'n'));
+
+	if (answer == 'y') {
+		if (readBoard(self)) {
+			return -2;
+		}
+		if (errorsInBoard(self)) {
+			return -1;
+		}
+	}
+	else {
+		self = Board_c1(10, 10, 15, 2000);
+		if (errorsInBoard(self)) {
+			return -1;
+		}
+		setBoard(self);
+	}
+
 
 	do {
 		printBoardVisible(self);
 		getMove(self, &i, &j);
+		if (checkMine(self, i, j) == 1) {
+			printf("********GAME OVER!********\n");
+			break;
+		}
 		discoverSurroundingCells(self, i, j);
+		writeBoard(self);
 	}
-	while (!youWon(self) && checkMine(self, i, j) == 0);
+	while (youWon(self) == 0);
 
-	if (youWon(self)) {
+	if (youWon(self) == 1) {
 		printf("********YOU WON!********\n");
-	}
-
-	if (checkMine(self, i, j) == 1) {
-		printf("********GAME OVER!********\n");
 	}
 
 	printBoard(self);
