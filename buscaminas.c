@@ -92,6 +92,24 @@ Board_t* Board_c1(unsigned int dim1, unsigned int dim2, unsigned int mines, int 
 
 }
 
+Board_t* Board_c2() {
+
+	//Returns a pointer to an empty Board.
+
+	Board_t *self;
+
+	self = malloc(sizeof(Board_t));
+	if (self == NULL) {
+		return NULL;
+	}
+	self->dim1 = 0;
+	self->dim2 = 0;
+	self->mines = 0;
+	self->mat = NULL;
+
+	return self;
+}
+
 void Board_d1(Board_t *self){
 
 	//Destroys a board.
@@ -366,9 +384,9 @@ int writeBoard(Board_t *self) {
 
 int readBoard(Board_t *self) {
 
-	//Reads the file board.txt and returns a pointer to the board.
+	//Reads the file board.txt and saves the info into self.
 
-	int fd;
+	int fd, bytecount = 0;
 
 	fd = open("board.txt", O_RDONLY);
 	if (fd == -1) {
@@ -376,10 +394,18 @@ int readBoard(Board_t *self) {
 		return -1;
 	}
 
-	read(fd, &self->dim1, sizeof(unsigned int));
-	read(fd, &self->dim2, sizeof(unsigned int));
-	read(fd, &self->mines, sizeof(unsigned int));
-	read(fd, self->mat, self->dim1 * self->dim2 * sizeof(Cell_t));
+	bytecount += read(fd, &self->dim1, sizeof(unsigned int));
+	printf("dim1: %d\n", self->dim1);
+	printf("Bytes read: %d\n", bytecount);
+	bytecount += read(fd, &self->dim2, sizeof(unsigned int));
+	printf("dim2: %d\n", self->dim2);
+	printf("Bytes read: %d\n", bytecount);
+	bytecount += read(fd, &self->mines, sizeof(unsigned int));
+	printf("mines: %d\n", self->mines);
+	printf("Bytes read: %d\n", bytecount);
+	bytecount += read(fd, self->mat, self->dim1 * self->dim2 * sizeof(Cell_t));
+	printf("sizeof(unsigned int): %d\n", sizeof(unsigned int));
+	printf("Bytes read: %d\n", bytecount);
 
 	if (close(fd) == -1) {
 		printf("Error closing file.\n");
@@ -391,7 +417,7 @@ int readBoard(Board_t *self) {
 
 int main() {
 
-	Board_t *self = NULL;
+	Board_t *myBoard = NULL;
 	unsigned int i = 0, j = 0;
 	char answer = '\0';
 
@@ -402,40 +428,44 @@ int main() {
 	while (scanf("%c", &answer) != 1 || !(answer == 'y' || answer == 'n'));
 
 	if (answer == 'y') {
-		if (readBoard(self)) {
+		myBoard = Board_c2();
+		if (myBoard == NULL) {
+			return -3;
+		}
+		if (readBoard(myBoard) != 0) {
 			return -2;
 		}
-		if (errorsInBoard(self)) {
+		if (errorsInBoard(myBoard)) {
 			return -1;
 		}
 	}
 	else {
-		self = Board_c1(10, 10, 15, 2000);
-		if (errorsInBoard(self)) {
+		myBoard = Board_c1(10, 10, 15, 2000);
+		if (errorsInBoard(myBoard)) {
 			return -1;
 		}
-		setBoard(self);
+		setBoard(myBoard);
 	}
 
 
 	do {
-		printBoardVisible(self);
-		getMove(self, &i, &j);
-		if (checkMine(self, i, j) == 1) {
+		printBoardVisible(myBoard);
+		getMove(myBoard, &i, &j);
+		if (checkMine(myBoard, i, j) == 1) {
 			printf("********GAME OVER!********\n");
 			break;
 		}
-		discoverSurroundingCells(self, i, j);
-		writeBoard(self);
+		discoverSurroundingCells(myBoard, i, j);
+		writeBoard(myBoard);
 	}
-	while (youWon(self) == 0);
+	while (youWon(myBoard) == 0);
 
-	if (youWon(self) == 1) {
+	if (youWon(myBoard) == 1) {
 		printf("********YOU WON!********\n");
 	}
 
-	printBoard(self);
-	Board_d1(self);
+	printBoard(myBoard);
+	Board_d1(myBoard);
 
 
 	return 0;
