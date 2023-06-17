@@ -394,9 +394,12 @@ int readBoard(Board_t *self) {
 		return -1;
 	}
 
-	bytecount += read(fd, &self->dim1, sizeof(unsigned int));
+	do {
+	bytecount = read(fd, &self->dim1, sizeof(unsigned int));
 	printf("dim1: %d\n", self->dim1);
 	printf("Bytes read: %d\n", bytecount);
+	}
+	while (bytecount < sizeof(unsigned int));
 	bytecount += read(fd, &self->dim2, sizeof(unsigned int));
 	printf("dim2: %d\n", self->dim2);
 	printf("Bytes read: %d\n", bytecount);
